@@ -1,0 +1,5 @@
+{
+  "name": "Prefabricated Building Cost Calculator",
+  "description": "An advanced tool for calculating costs and dimensions of prefabricated industrial buildings across multiple structural typologies (Bacacier, Alare, Monolithic, Flat) with customizable thermal options and unit costs.",
+  "requestFramePermissions": []
+}
