@@ -46,7 +46,8 @@ import {
   Square,
   Zap,
   ShieldCheck,
-  Globe
+  Globe,
+  Printer
 } from 'lucide-react';
 
 const App: React.FC = () => {
@@ -247,13 +248,6 @@ const App: React.FC = () => {
     return calculateResults.filter(r => r.type === selectedType);
   }, [calculateResults, selectedType]);
 
-  const chartData = calculateResults.map(r => ({
-    name: r.subtype ? `${r.type} ${r.subtype} (${r.thermal})` : `${r.type} (${r.thermal})`,
-    total: Math.round(r.totalCost),
-    type: r.type,
-    thermal: r.thermal
-  }));
-
   // --- Handlers ---
   const handleDimChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -280,7 +274,7 @@ const App: React.FC = () => {
     const timestamp = new Date().toLocaleString('it-IT');
     
     const cardHtml = resultsToPrint.map(res => {
-      const key = `${res.type}_${res.thermal}_${res.subtype || 'NONE'}`;
+      const key = `${res.type}_res.thermal}_${res.subtype || 'NONE'}`;
       const multiplier = (globalMultiplier / 100) * ((individualMultipliers[key] || 100) / 100) * 100;
       const accentColor = res.thermal === ThermalOption.WARM ? '#f97316' : '#3b82f6';
       
@@ -389,7 +383,6 @@ const App: React.FC = () => {
         .summary-item { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
         .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
         
-        /* Professional Footer for Report */
         .report-footer { margin-top: 60px; padding: 60px 40px; background: #0f172a; border-radius: 24px; text-align: center; color: white; break-inside: avoid; }
         .footer-header { color: #3b82f6; font-size: 10px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 16px; display: block; }
         .dev-credit { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
@@ -400,7 +393,34 @@ const App: React.FC = () => {
         .legal-box { border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; background: rgba(255,255,255,0.02); max-width: 600px; margin: 0 auto; }
         .legal-text { font-size: 9px; opacity: 0.4; text-transform: uppercase; line-height: 1.6; letter-spacing: 0.05em; }
 
-        @media print { .card { break-inside: avoid; margin-bottom: 20px; } body { padding: 20px; background: white; } }
+        @page {
+          size: A4;
+          margin: 15mm;
+        }
+
+        @media print { 
+          body { 
+            background: white !important; 
+            padding: 0 !important; 
+          }
+          .card { 
+            break-inside: avoid; 
+            margin-bottom: 20px; 
+            box-shadow: none; 
+            border: 1px solid #e2e8f0;
+            border-top: 5px solid;
+          }
+          .multiplier-info, .breakdown-row.highlight, .report-footer {
+             -webkit-print-color-adjust: exact;
+             print-color-adjust: exact;
+          }
+          .grid {
+            display: block;
+          }
+          .card {
+            width: 100%;
+          }
+        }
       </style>
     </head>
     <body>
@@ -455,10 +475,24 @@ const App: React.FC = () => {
     URL.revokeObjectURL(url);
   };
 
+  const printPdf = () => {
+    const html = generateReportHtml(calculateResults, `Stampa Professionale Prefabbricati`);
+    const printWindow = window.open('', '_blank');
+    if (printWindow) {
+      printWindow.document.write(html);
+      printWindow.document.close();
+      printWindow.focus();
+      // Giving a moment for the print-friendly styles and layout to stabilize
+      setTimeout(() => {
+        printWindow.print();
+      }, 500);
+    }
+  };
+
   return (
     <div className={`min-h-screen flex flex-col lg:flex-row transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
       
-      {/* Sidebar - Optimization for vertical scroll and no overlap */}
+      {/* Sidebar */}
       <aside className={`w-full lg:w-96 border-r lg:h-screen lg:sticky lg:top-0 lg:overflow-y-auto transition-colors custom-scrollbar ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
         <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white flex justify-between items-center">
           <div className="flex items-center gap-3">
@@ -510,6 +544,27 @@ const App: React.FC = () => {
               <span className="text-[8px] font-bold opacity-30">-50%</span>
               <span className="text-[8px] font-bold opacity-30">BASE</span>
               <span className="text-[8px] font-bold opacity-30">+100%</span>
+            </div>
+          </section>
+
+          {/* Costi Base Pannelli (Grigio Base) */}
+          <section>
+            <div className="flex items-center gap-2 mb-4 font-semibold uppercase text-xs tracking-wider opacity-70">
+              <Square className="w-4 h-4" /> Costi Base Pannelli (€/m²)
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <InputField 
+                label="Pannello Caldo" 
+                value={costs.panelCostWarm} 
+                onChange={(e) => setCosts(prev => ({ ...prev, panelCostWarm: parseFloat(e.target.value) || 0 }))} 
+                darkMode={darkMode} 
+              />
+              <InputField 
+                label="Pannello Freddo" 
+                value={costs.panelCostCold} 
+                onChange={(e) => setCosts(prev => ({ ...prev, panelCostCold: parseFloat(e.target.value) || 0 }))} 
+                darkMode={darkMode} 
+              />
             </div>
           </section>
 
@@ -570,7 +625,6 @@ const App: React.FC = () => {
               <Layers className="w-4 h-4" /> Configurazione Tipologie (€/m²)
             </div>
             
-            {/* Optimized Vertical Scroll Bar for Tipologie */}
             <div className="max-h-[60vh] lg:max-h-[500px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
               {/* Bacacier Section */}
               <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
@@ -594,7 +648,7 @@ const App: React.FC = () => {
                 </div>
               </div>
 
-              {/* Monolitica Section - Updated with Shed Variants */}
+              {/* Monolitica Section */}
               <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
                 <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-3">Monolitica</h4>
                 <div className="space-y-4">
@@ -648,6 +702,9 @@ const App: React.FC = () => {
             <div className="flex items-center gap-2 mb-2 font-semibold uppercase text-xs tracking-wider opacity-70">
               <Files className="w-4 h-4" /> Esportazione Report
             </div>
+            <button onClick={printPdf} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-rose-600/20 active:scale-95">
+              <Printer className="w-5 h-5" /> Stampa PDF (A4)
+            </button>
             <button onClick={exportSelected} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95">
               <FileText className="w-5 h-5" /> Report {selectedType}
             </button>
@@ -683,9 +740,7 @@ const App: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
           {filteredResults.map((res, idx) => {
             const key = `${res.type}_${res.thermal}_${res.subtype || 'NONE'}`;
-            // Base individual mult
             const indMult = individualMultipliers[key] || 100;
-            // Combined with global
             const totalMult = Math.round((globalMultiplier / 100) * (indMult / 100) * 100);
 
             return (
@@ -779,6 +834,7 @@ const App: React.FC = () => {
               <li><strong>Barra Master Globale:</strong> Utilizza lo slider in alto nella sidebar per regolare i prezzi di tutti i modelli contemporaneamente.</li>
               <li><strong>Opere Complementari:</strong> Usa il flag "Considera nel totale" per includere o escludere fondazioni e pavimento dal calcolo finale.</li>
               <li><strong>Bacacier & Monolitica:</strong> Sono presenti varianti separate per configurazioni Cieche e Shed/Lucernari.</li>
+              <li><strong>Stampa PDF:</strong> Il report è ottimizzato per la stampa in formato A4 con grafica professionale.</li>
             </ul>
           </div>
         </div>
