@@ -1,5 +1,4 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { 
   BuildingDimensions, 
   UnitCosts, 
@@ -12,53 +11,25 @@ import {
   PanelFinish
 } from './types';
 import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  ResponsiveContainer,
-  Cell
-} from 'recharts';
-import { 
   Building2, 
   Ruler, 
-  Euro, 
-  ThermometerSun, 
-  ThermometerSnowflake,
-  Info,
-  Calculator, 
-  Sun,
-  Moon,
-  FileCode,
-  Settings2,
-  Palette,
-  Percent,
-  TrendingUp,
-  TrendingDown,
+  Zap, 
   Layers,
-  ChevronDown,
-  ChevronUp,
-  Files,
   FileText,
-  HardHat,
-  Square,
-  Zap,
-  ShieldCheck,
-  Globe,
-  Printer
+  Printer,
+  ChevronRight,
+  Settings2,
+  Box,
+  LayoutGrid,
+  TrendingUp,
+  CreditCard,
+  Hexagon,
+  MousePointer2
 } from 'lucide-react';
 
 const App: React.FC = () => {
   // --- State ---
-  const [darkMode, setDarkMode] = useState<boolean>(() => {
-    if (typeof window !== 'undefined') {
-      return window.matchMedia('(prefers-color-scheme: dark)').matches;
-    }
-    return false;
-  });
-
+  // Defaulting strictly to the "Industrial Dark" theme logic
   const [dimensions, setDimensions] = useState<BuildingDimensions>({
     length: 50,
     width: 30,
@@ -91,8 +62,8 @@ const App: React.FC = () => {
       plant: 75, 
       warmCieco: 75, 
       coldCieco: 55,
-      warmShed: 85, // Original + 10
-      coldShed: 65  // Original + 10
+      warmShed: 85,
+      coldShed: 65
     },
     flat: { plant: 90, roofWarm: 70, roofCold: 50 },
     alare: { 
@@ -110,14 +81,6 @@ const App: React.FC = () => {
 
   const [selectedType, setSelectedType] = useState<StructureType>(StructureType.BACACIER);
   const [selectedFinish, setSelectedFinish] = useState<PanelFinish>(PanelFinish.FONDO_CASSERO);
-
-  useEffect(() => {
-    if (darkMode) {
-      document.documentElement.classList.add('dark');
-    } else {
-      document.documentElement.classList.remove('dark');
-    }
-  }, [darkMode]);
 
   // --- Logic ---
   const calculateResults = useMemo((): CalculationResult[] => {
@@ -161,7 +124,6 @@ const App: React.FC = () => {
         const addResult = (finalRoofBaseCost: number, subtype?: string) => {
           const key = `${type}_${thermal}_${subtype || 'NONE'}`;
           
-          // Combined Multiplier: Global * Individual
           const currentMult = (globalMultiplier / 100) * ((individualMultipliers[key] || 100) / 100);
 
           const unitPlant = basePlantUnitCost * currentMult;
@@ -177,7 +139,6 @@ const App: React.FC = () => {
           const mezzanineCost = dimensions.mezzanineArea * unitMezzanine;
           const roofCost = dimensions.coveredArea * unitRoof;
           
-          // Apply toggle for complementary costs
           const foundationCost = includeComplementary ? dimensions.foundationArea * unitFoundations : 0;
           const flooringCost = includeComplementary ? dimensions.flooringArea * unitFlooring : 0;
           
@@ -274,17 +235,17 @@ const App: React.FC = () => {
     const timestamp = new Date().toLocaleString('it-IT');
     
     const cardHtml = resultsToPrint.map(res => {
-      const key = `${res.type}_res.thermal}_${res.subtype || 'NONE'}`;
+      const key = `${res.type}_${res.thermal}_${res.subtype || 'NONE'}`;
       const multiplier = (globalMultiplier / 100) * ((individualMultipliers[key] || 100) / 100) * 100;
-      const accentColor = res.thermal === ThermalOption.WARM ? '#f97316' : '#3b82f6';
+      const accentColor = res.thermal === ThermalOption.WARM ? '#ea580c' : '#0ea5e9'; // Orange vs Sky Blue
       
       return `
-      <div class="card" style="border-top-color: ${accentColor};">
+      <div class="card" style="border-left: 5px solid ${accentColor};">
         <div class="card-body">
           <div class="header">
             <div>
               <div class="title">${res.type} ${res.subtype ? '- ' + res.subtype : ''}</div>
-              <div class="thermal-label">Opzione ${res.thermal}</div>
+              <div class="thermal-label" style="color: ${accentColor}">OPZIONE ${res.thermal}</div>
             </div>
             <div class="price-container">
               <div class="total-price">€${Math.round(res.totalCost).toLocaleString('it-IT')}</div>
@@ -293,38 +254,39 @@ const App: React.FC = () => {
           </div>
 
           <div class="multiplier-info">
-             Variazione Combinata Totale: <strong>${Math.round(multiplier)}%</strong>
-             <br><small>*Esclusi pannelli base ed extra finitura</small>
+             VARIAZIONE COMBINATA: <strong>${Math.round(multiplier)}%</strong>
           </div>
 
           <div class="breakdown">
             <div class="breakdown-header">
               <span>Componente</span>
-              <span class="text-right">Unitario (€/m²)</span>
-              <span class="text-right">Parziale (€)</span>
+              <span class="text-right">€/m²</span>
+              <span class="text-right">TOTALE</span>
             </div>
             <div class="breakdown-row">
-              <span>Struttura Prefabbricata</span>
+              <span>Struttura</span>
               <span class="text-right">${res.unitCosts.plant.toFixed(2)}</span>
               <span class="text-right">€${Math.round(res.breakdown.plant).toLocaleString()}</span>
             </div>
-            <div class="breakdown-row" style="opacity: ${res.breakdown.foundations > 0 ? 1 : 0.5}">
-              <span>Fondazioni ${res.breakdown.foundations === 0 ? '(Escluso)' : ''}</span>
+            ${res.breakdown.foundations > 0 ? `
+            <div class="breakdown-row">
+              <span>Fondazioni</span>
               <span class="text-right">${res.unitCosts.foundations.toFixed(2)}</span>
               <span class="text-right">€${Math.round(res.breakdown.foundations).toLocaleString()}</span>
-            </div>
-            <div class="breakdown-row" style="opacity: ${res.breakdown.flooring > 0 ? 1 : 0.5}">
-              <span>Pavimentazione ${res.breakdown.flooring === 0 ? '(Escluso)' : ''}</span>
+            </div>` : ''}
+            ${res.breakdown.flooring > 0 ? `
+            <div class="breakdown-row">
+              <span>Pavimentazione</span>
               <span class="text-right">${res.unitCosts.flooring.toFixed(2)}</span>
               <span class="text-right">€${Math.round(res.breakdown.flooring).toLocaleString()}</span>
-            </div>
+            </div>` : ''}
             <div class="breakdown-row">
               <span>Soppalchi</span>
               <span class="text-right">${res.unitCosts.mezzanine.toFixed(2)}</span>
               <span class="text-right">€${Math.round(res.breakdown.mezzanine).toLocaleString()}</span>
             </div>
             <div class="breakdown-row">
-              <span>Copertura ${res.subtype ? '('+res.subtype+')' : ''}</span>
+              <span>Copertura</span>
               <span class="text-right">${res.unitCosts.roof.toFixed(2)}</span>
               <span class="text-right">€${Math.round(res.breakdown.roof).toLocaleString()}</span>
             </div>
@@ -334,17 +296,10 @@ const App: React.FC = () => {
               <span class="text-right">€${Math.round(res.breakdown.panelBase).toLocaleString()}</span>
             </div>
             <div class="breakdown-row highlight">
-              <span>Extra (${res.finish})</span>
+              <span>Finitura (${res.finish})</span>
               <span class="text-right">${res.unitCosts.panelExtra.toFixed(2)}</span>
               <span class="text-right">€${Math.round(res.breakdown.panelExtra).toLocaleString()}</span>
             </div>
-          </div>
-
-          <div class="summary-grid">
-            <div class="summary-item"><span class="dot" style="background: #3b82f6"></span>Struttura: €${Math.round(res.breakdown.plant + res.breakdown.foundations + res.breakdown.flooring).toLocaleString()}</div>
-            <div class="summary-item"><span class="dot" style="background: #10b981"></span>Soppalchi: €${Math.round(res.breakdown.mezzanine).toLocaleString()}</div>
-            <div class="summary-item"><span class="dot" style="background: #f59e0b"></span>Copertura: €${Math.round(res.breakdown.roof).toLocaleString()}</div>
-            <div class="summary-item"><span class="dot" style="background: #ef4444"></span>Pannelli: €${Math.round(res.breakdown.panelBase + res.breakdown.panelExtra).toLocaleString()}</div>
           </div>
         </div>
       </div>
@@ -356,105 +311,56 @@ const App: React.FC = () => {
     <html lang="it">
     <head>
       <meta charset="UTF-8">
-      <title>Report Prefabbricato - ${titleSuffix}</title>
+      <title>Report - ${titleSuffix}</title>
       <style>
-        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&display=swap');
-        body { font-family: 'Inter', sans-serif; padding: 40px; background-color: #f8fafc; color: #1e293b; margin: 0; }
-        .report-header { margin-bottom: 40px; border-bottom: 2px solid #e2e8f0; padding-bottom: 20px; }
-        .report-header h1 { margin: 0; font-size: 28px; color: #0f172a; font-weight: 900; }
-        .report-header p { margin: 5px 0 0 0; font-size: 14px; opacity: 0.6; }
-        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 30px; }
-        @media (max-width: 900px) { .grid { grid-template-columns: 1fr; } }
-        .card { background: white; border-radius: 16px; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1); border-top: 5px solid #3b82f6; overflow: hidden; break-inside: avoid; margin-bottom: 20px;}
-        .card-body { padding: 24px; }
-        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 24px; }
-        .title { font-size: 20px; font-weight: 800; color: #0f172a; }
-        .thermal-label { font-size: 11px; font-weight: 700; text-transform: uppercase; color: #64748b; margin-top: 4px; letter-spacing: 0.05em; }
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;800;900&family=JetBrains+Mono:wght@400;700&display=swap');
+        body { font-family: 'Inter', sans-serif; padding: 40px; background-color: #ffffff; color: #111827; margin: 0; }
+        .report-header { margin-bottom: 30px; border-bottom: 4px solid #111827; padding-bottom: 20px; }
+        .report-header h1 { margin: 0; font-size: 24px; color: #111827; font-weight: 900; text-transform: uppercase; letter-spacing: -0.05em; }
+        .report-header p { margin: 5px 0 0 0; font-size: 12px; font-family: 'JetBrains Mono', monospace; opacity: 0.8; }
+        .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
+        .card { background: #f3f4f6; border: 1px solid #e5e7eb; break-inside: avoid; margin-bottom: 20px;}
+        .card-body { padding: 20px; }
+        .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 20px; }
+        .title { font-size: 16px; font-weight: 900; text-transform: uppercase; color: #111827; }
+        .thermal-label { font-size: 10px; font-weight: 800; text-transform: uppercase; margin-top: 4px; letter-spacing: 0.1em; }
         .price-container { text-align: right; }
-        .total-price { font-size: 26px; font-weight: 900; color: #0f172a; }
-        .unit-price { font-size: 15px; font-weight: 700; color: #3b82f6; }
-        .multiplier-info { background: #f1f5f9; padding: 14px; border-radius: 10px; font-size: 12px; margin-bottom: 20px; color: #475569; border: 1px solid #e2e8f0; }
-        .breakdown { margin-top: 20px; }
-        .breakdown-header { display: grid; grid-template-columns: 2fr 1fr 1fr; font-size: 10px; font-weight: 800; text-transform: uppercase; color: #94a3b8; border-bottom: 2px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 8px; letter-spacing: 0.05em; }
-        .breakdown-row { display: grid; grid-template-columns: 2fr 1fr 1fr; font-size: 12px; padding: 8px 0; border-bottom: 1px dashed #f1f5f9; }
-        .breakdown-row.highlight { color: #3b82f6; font-weight: 700; background: #eff6ff; margin: 0 -10px; padding: 8px 10px; border-radius: 6px; }
+        .total-price { font-size: 24px; font-weight: 900; font-family: 'JetBrains Mono', monospace; color: #111827; }
+        .unit-price { font-size: 12px; font-weight: 700; color: #6b7280; font-family: 'JetBrains Mono', monospace; }
+        .multiplier-info { background: #e5e7eb; padding: 8px; font-size: 10px; margin-bottom: 15px; color: #374151; font-weight: 600; text-transform: uppercase; }
+        .breakdown-header { display: grid; grid-template-columns: 2fr 1fr 1fr; font-size: 9px; font-weight: 900; text-transform: uppercase; color: #9ca3af; border-bottom: 2px solid #d1d5db; padding-bottom: 6px; margin-bottom: 6px; letter-spacing: 0.1em; }
+        .breakdown-row { display: grid; grid-template-columns: 2fr 1fr 1fr; font-size: 11px; padding: 6px 0; border-bottom: 1px solid #e5e7eb; font-family: 'JetBrains Mono', monospace; }
+        .breakdown-row span:first-child { font-family: 'Inter', sans-serif; font-weight: 600; text-transform: uppercase; font-size: 10px; }
+        .breakdown-row.highlight { color: #ea580c; font-weight: 700; }
         .text-right { text-align: right; }
-        .summary-grid { margin-top: 24px; padding-top: 20px; border-top: 2px solid #f1f5f9; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        .summary-item { font-size: 12px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
-        .dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
         
-        .report-footer { margin-top: 60px; padding: 60px 40px; background: #0f172a; border-radius: 24px; text-align: center; color: white; break-inside: avoid; }
-        .footer-header { color: #3b82f6; font-size: 10px; font-weight: 800; letter-spacing: 0.2em; text-transform: uppercase; margin-bottom: 16px; display: block; }
-        .dev-credit { font-size: 24px; font-weight: 900; margin-bottom: 8px; }
-        .dev-credit span { color: #3b82f6; }
-        .dev-sub { font-size: 14px; font-style: italic; opacity: 0.5; margin-bottom: 32px; }
-        .footer-meta { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; opacity: 0.6; margin-bottom: 24px; }
-        .footer-url { color: #3b82f6; text-decoration: none; margin-left: 10px; }
-        .legal-box { border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 20px; background: rgba(255,255,255,0.02); max-width: 600px; margin: 0 auto; }
-        .legal-text { font-size: 9px; opacity: 0.4; text-transform: uppercase; line-height: 1.6; letter-spacing: 0.05em; }
-
-        @page {
-          size: A4;
-          margin: 15mm;
-        }
+        .report-footer { margin-top: 50px; padding: 20px; border-top: 2px solid #111827; text-align: center; font-size: 10px; text-transform: uppercase; font-weight: 700; letter-spacing: 0.1em; opacity: 0.6; }
 
         @media print { 
-          body { 
-            background: white !important; 
-            padding: 0 !important; 
-          }
-          .card { 
-            break-inside: avoid; 
-            margin-bottom: 20px; 
-            box-shadow: none; 
-            border: 1px solid #e2e8f0;
-            border-top: 5px solid;
-          }
-          .multiplier-info, .breakdown-row.highlight, .report-footer {
-             -webkit-print-color-adjust: exact;
-             print-color-adjust: exact;
-          }
-          .grid {
-            display: block;
-          }
-          .card {
-            width: 100%;
-          }
+          body { -webkit-print-color-adjust: exact; }
+          .grid { display: block; }
+          .card { width: 100%; margin-bottom: 15px; page-break-inside: avoid; }
         }
       </style>
     </head>
     <body>
       <div class="report-header">
         <h1>${titleSuffix}</h1>
-        <p>Dimensioni: ${dimensions.length}x${dimensions.width}m | Altezza: ${dimensions.height}m</p>
-        <p>Data: ${timestamp} | Finitura Pannelli: ${selectedFinish}</p>
+        <p>DIM: ${dimensions.length}x${dimensions.width}m | H: ${dimensions.height}m | AREA: ${dimensions.length * dimensions.width}m²</p>
+        <p>DATE: ${timestamp} | FINISH: ${selectedFinish}</p>
       </div>
       <div class="grid">
         ${cardHtml}
       </div>
-      
       <div class="report-footer">
-        <span class="footer-header">Proprietà Intellettuale & Sviluppo</span>
-        <div class="dev-credit">Software progettato e sviluppato da <span>Efrem Giannessi</span></div>
-        <div class="dev-sub">Specialized Engineering Solutions for Precast Concrete Structures</div>
-        
-        <div class="footer-meta">
-          © 2024-2025 ALL RIGHTS RESERVED • <a href="https://efremgiannessi.org" class="footer-url">EFREMGIANNESSI.ORG</a>
-        </div>
-
-        <div class="legal-box">
-          <p class="legal-text">
-            AVVISO LEGALE: QUESTO SOFTWARE E GLI ALGORITMI DI CALCOLO CONTENUTI SONO DI PROPRIETÀ ESCLUSIVA DI EFREM GIANNESSI. 
-            QUALSIASI RIPRODUZIONE, DISTRIBUZIONE O UTILIZZO NON AUTORIZZATO DEL CODICE SORGENTE O DELLE LOGICHE TECNICHE È SEVERAMENTE VIETATO.
-          </p>
-        </div>
+        GENERATED BY EFREM GIANNESSI ENGINEERING SOLUTIONS
       </div>
     </body>
     </html>`;
   };
 
   const exportSelected = () => {
-    const html = generateReportHtml(filteredResults, `Analisi Prefabbricato: ${selectedType}`);
+    const html = generateReportHtml(filteredResults, `ANALYSIS: ${selectedType}`);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -465,24 +371,23 @@ const App: React.FC = () => {
   };
 
   const exportAll = () => {
-    const html = generateReportHtml(calculateResults, `Report Completo Prefabbricati`);
+    const html = generateReportHtml(calculateResults, `FULL REPORT: ALL TYPES`);
     const blob = new Blob([html], { type: 'text/html' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `report_completo.html`;
+    a.download = `report_complete.html`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const printPdf = () => {
-    const html = generateReportHtml(calculateResults, `Stampa Professionale Prefabbricati`);
+    const html = generateReportHtml(calculateResults, `PRINT EXPORT`);
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(html);
       printWindow.document.close();
       printWindow.focus();
-      // Giving a moment for the print-friendly styles and layout to stabilize
       setTimeout(() => {
         printWindow.print();
       }, 500);
@@ -490,45 +395,46 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className={`min-h-screen flex flex-col lg:flex-row transition-colors duration-300 ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'}`}>
+    <div className="min-h-screen flex flex-col lg:flex-row bg-[#111827] text-gray-100">
       
-      {/* Sidebar */}
-      <aside className={`w-full lg:w-96 border-r lg:h-screen lg:sticky lg:top-0 lg:overflow-y-auto transition-colors custom-scrollbar ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-        <div className="p-6 border-b border-slate-100 dark:border-slate-800 bg-slate-900 text-white flex justify-between items-center">
-          <div className="flex items-center gap-3">
-            <Building2 className="w-8 h-8 text-blue-400" />
-            <div className="flex-1">
-              <h1 className="text-lg font-bold text-white leading-tight">Prefabricated Building Cost Calculator</h1>
-              <p className="text-slate-400 text-[10px] uppercase tracking-wider font-bold mt-1">Configuratore Industriale</p>
+      {/* Sidebar - Dark Industrial Style */}
+      <aside className="w-full lg:w-96 border-r border-gray-800 lg:h-screen lg:sticky lg:top-0 lg:overflow-y-auto custom-scrollbar bg-[#0a0f1d]">
+        <div className="p-8 border-b border-gray-800/50 bg-[#070b14]">
+          <div className="flex items-center gap-4">
+            <div className="p-3 bg-orange-600 rounded-xl shadow-lg shadow-orange-600/20">
+              <Building2 className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-sm font-black text-white leading-none uppercase tracking-tighter mb-1">Precast Estimator</h1>
+              <p className="text-[9px] text-gray-500 uppercase tracking-[0.2em] font-bold">Industrial v2.0</p>
             </div>
           </div>
-          <button onClick={() => setDarkMode(!darkMode)} className="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 transition-colors text-slate-300 ml-2">
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
         </div>
 
-        <div className="p-6 space-y-8 pb-10">
-          {/* Section 1: Dimensions */}
+        <div className="p-6 space-y-10 pb-20">
+          
+          {/* GEOMETRY SECTION */}
           <section>
-            <div className="flex items-center gap-2 mb-4 font-semibold uppercase text-xs tracking-wider opacity-70">
-              <Ruler className="w-4 h-4" /> Dimensioni Edificio
+            <div className="flex items-center gap-2 mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+              <Ruler className="w-3 h-3" /> Building Geometry
             </div>
             <div className="grid grid-cols-2 gap-4">
-              <InputField label="Lunghezza (m)" name="length" value={dimensions.length} onChange={handleDimChange} darkMode={darkMode} />
-              <InputField label="Larghezza (m)" name="width" value={dimensions.width} onChange={handleDimChange} darkMode={darkMode} />
-              <InputField label="Altezza (m)" name="height" value={dimensions.height} onChange={handleDimChange} darkMode={darkMode} />
-              <InputField label="Soppalchi (m²)" name="mezzanineArea" value={dimensions.mezzanineArea} onChange={handleDimChange} darkMode={darkMode} />
-              <InputField label="Coperta (m²)" name="coveredArea" value={dimensions.coveredArea} onChange={handleDimChange} className="col-span-2" darkMode={darkMode} />
+              <InputField label="Length (m)" name="length" value={dimensions.length} onChange={handleDimChange} />
+              <InputField label="Width (m)" name="width" value={dimensions.width} onChange={handleDimChange} />
+              <InputField label="Height (m)" name="height" value={dimensions.height} onChange={handleDimChange} />
+              <InputField label="Mezzanine (m²)" name="mezzanineArea" value={dimensions.mezzanineArea} onChange={handleDimChange} />
+              <InputField label="Covered (m²)" name="coveredArea" value={dimensions.coveredArea} onChange={handleDimChange} className="col-span-2" />
             </div>
           </section>
 
-          {/* Master Global Multiplier Slider */}
-          <section className="p-4 rounded-xl border bg-blue-500/5 border-blue-500/20">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-blue-600">
-                <Zap className="w-4 h-4" /> Variazione Prezzi Globale
+          {/* GLOBAL VARIANCE */}
+          <section className="p-5 rounded-3xl border border-gray-800 bg-[#0c1120] relative overflow-hidden group">
+            <div className="absolute top-0 right-0 w-20 h-20 bg-orange-600/5 rounded-full blur-2xl -mr-10 -mt-10 pointer-events-none"></div>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                <Zap className="w-3 h-3 text-orange-500" /> Global Rate Adj.
               </div>
-              <div className={`text-sm font-black ${globalMultiplier > 100 ? 'text-rose-500' : globalMultiplier < 100 ? 'text-emerald-500' : 'text-blue-500'}`}>
+              <div className={`text-base font-black font-mono tracking-tighter ${globalMultiplier !== 100 ? 'text-orange-500' : 'text-gray-500'}`}>
                 {globalMultiplier}%
               </div>
             </div>
@@ -538,368 +444,351 @@ const App: React.FC = () => {
               max="200" 
               value={globalMultiplier} 
               onChange={(e) => setGlobalMultiplier(parseInt(e.target.value))}
-              className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
+              className="w-full h-1.5 bg-gray-800 rounded-full appearance-none cursor-pointer accent-orange-600 hover:accent-orange-500 transition-all"
             />
-            <div className="flex justify-between mt-2 px-1">
-              <span className="text-[8px] font-bold opacity-30">-50%</span>
-              <span className="text-[8px] font-bold opacity-30">BASE</span>
-              <span className="text-[8px] font-bold opacity-30">+100%</span>
+            <div className="flex justify-between mt-3 px-1">
+              <span className="text-[8px] font-black text-gray-700 tracking-wider">-50%</span>
+              <span className="text-[8px] font-black text-gray-700 tracking-wider">BASE</span>
+              <span className="text-[8px] font-black text-gray-700 tracking-wider">+100%</span>
             </div>
           </section>
 
-          {/* Costi Base Pannelli (Grigio Base) */}
+          {/* PANEL COSTS */}
           <section>
-            <div className="flex items-center gap-2 mb-4 font-semibold uppercase text-xs tracking-wider opacity-70">
-              <Square className="w-4 h-4" /> Costi Base Pannelli (€/m²)
+             <div className="flex items-center gap-2 mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+              <Box className="w-3 h-3" /> Base Panel Costs
             </div>
             <div className="grid grid-cols-2 gap-4">
               <InputField 
-                label="Pannello Caldo" 
+                label="Warm Panel €/m²" 
                 value={costs.panelCostWarm} 
                 onChange={(e) => setCosts(prev => ({ ...prev, panelCostWarm: parseFloat(e.target.value) || 0 }))} 
-                darkMode={darkMode} 
               />
               <InputField 
-                label="Pannello Freddo" 
+                label="Cold Panel €/m²" 
                 value={costs.panelCostCold} 
                 onChange={(e) => setCosts(prev => ({ ...prev, panelCostCold: parseFloat(e.target.value) || 0 }))} 
-                darkMode={darkMode} 
               />
             </div>
           </section>
 
-          {/* Costi Complementari */}
-          <section className="p-4 rounded-xl border bg-amber-500/5 border-amber-500/20">
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center gap-2 font-bold uppercase text-[10px] tracking-widest text-amber-600">
-                <HardHat className="w-4 h-4" /> Costi Complementari
+          {/* COMPLEMENTARY WORKS */}
+          <section className="p-5 rounded-3xl border border-gray-800 bg-[#0c1120]">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-gray-400">
+                <LayoutGrid className="w-3 h-3 text-orange-500" /> Site Works
               </div>
-              <label className="flex items-center gap-2 cursor-pointer group">
-                <span className="text-[9px] font-bold opacity-40 group-hover:opacity-100 uppercase transition-opacity">Considera nel totale</span>
-                <input 
-                  type="checkbox" 
-                  checked={includeComplementary}
-                  onChange={(e) => setIncludeComplementary(e.target.checked)}
-                  className="w-4 h-4 rounded border-amber-500 text-amber-600 focus:ring-amber-500 cursor-pointer"
-                />
-              </label>
+              <div 
+                onClick={() => setIncludeComplementary(!includeComplementary)}
+                className={`w-10 h-5 rounded-full flex items-center p-1 cursor-pointer transition-colors duration-300 ${includeComplementary ? 'bg-orange-600' : 'bg-gray-700'}`}
+              >
+                <div className={`w-3 h-3 rounded-full bg-white shadow-sm transform transition-transform duration-300 ${includeComplementary ? 'translate-x-5' : 'translate-x-0'}`} />
+              </div>
             </div>
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <InputField label="Fondazioni (m²)" value={dimensions.foundationArea} onChange={(e) => setDimensions(d => ({...d, foundationArea: parseFloat(e.target.value) || 0}))} darkMode={darkMode} />
-                <InputField label="€/m² Fond." value={costs.foundationUnitCost} onChange={(e) => setCosts(c => ({...c, foundationUnitCost: parseFloat(e.target.value) || 0}))} darkMode={darkMode} />
+                <InputField label="Found. Area" value={dimensions.foundationArea} onChange={(e) => setDimensions(d => ({...d, foundationArea: parseFloat(e.target.value) || 0}))} />
+                <InputField label="Found. €/m²" value={costs.foundationUnitCost} onChange={(e) => setCosts(c => ({...c, foundationUnitCost: parseFloat(e.target.value) || 0}))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
-                <InputField label="Pavimento (m²)" value={dimensions.flooringArea} onChange={(e) => setDimensions(d => ({...d, flooringArea: parseFloat(e.target.value) || 0}))} darkMode={darkMode} />
-                <InputField label="€/m² Pavim." value={costs.flooringUnitCost} onChange={(e) => setCosts(c => ({...c, flooringUnitCost: parseFloat(e.target.value) || 0}))} darkMode={darkMode} />
+                <InputField label="Floor Area" value={dimensions.flooringArea} onChange={(e) => setDimensions(d => ({...d, flooringArea: parseFloat(e.target.value) || 0}))} />
+                <InputField label="Floor €/m²" value={costs.flooringUnitCost} onChange={(e) => setCosts(c => ({...c, flooringUnitCost: parseFloat(e.target.value) || 0}))} />
               </div>
             </div>
           </section>
 
+          {/* FINISH SELECTION */}
           <section>
-            <div className="flex items-center gap-2 mb-4 font-semibold uppercase text-xs tracking-wider opacity-70">
-              <Palette className="w-4 h-4" /> Finitura Pannelli
+            <div className="flex items-center gap-2 mb-6 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+              <Hexagon className="w-3 h-3" /> Exterior Finish
             </div>
             <div className="space-y-2">
               {Object.values(PanelFinish).map((finish) => (
                 <button
                   key={finish}
                   onClick={() => setSelectedFinish(finish)}
-                  className={`w-full flex items-center justify-between px-4 py-2.5 rounded-xl border text-sm font-semibold transition-all ${
+                  className={`w-full flex items-center justify-between px-4 py-3 rounded-xl border text-[10px] font-black uppercase tracking-wider transition-all duration-200 group ${
                     selectedFinish === finish 
-                    ? 'bg-blue-600 border-blue-600 text-white shadow-lg' 
-                    : darkMode ? 'bg-slate-800 border-slate-700 hover:border-slate-500' : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+                    ? 'bg-orange-600/10 border-orange-600 text-orange-500' 
+                    : 'bg-[#111827] border-gray-800 text-gray-400 hover:border-gray-600 hover:text-gray-200'
                   }`}
                 >
-                  <span>{finish}</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full ${selectedFinish === finish ? 'bg-white/20' : 'bg-slate-200 dark:bg-slate-700'}`}>
-                    +{costs.finishExtras[finish]} €/m²
+                  <span className="flex items-center gap-2">
+                     <div className={`w-1.5 h-1.5 rounded-full ${selectedFinish === finish ? 'bg-orange-500' : 'bg-gray-700 group-hover:bg-gray-500'}`} />
+                     {finish}
+                  </span>
+                  <span className="bg-[#0a0f1d] text-gray-500 px-2 py-1 rounded font-mono">
+                    +{costs.finishExtras[finish]} €
                   </span>
                 </button>
               ))}
             </div>
           </section>
 
+          {/* ADVANCED CONFIGURATION */}
           <section className="space-y-4">
-            <div className="flex items-center gap-2 mb-2 font-semibold uppercase text-xs tracking-wider opacity-70">
-              <Layers className="w-4 h-4" /> Configurazione Tipologie (€/m²)
+            <div className="flex items-center gap-2 mb-2 text-[10px] font-black uppercase tracking-[0.2em] text-orange-500">
+              <Settings2 className="w-3 h-3" /> Unit Rates (€/m²)
             </div>
             
-            <div className="max-h-[60vh] lg:max-h-[500px] overflow-y-auto space-y-6 pr-2 custom-scrollbar">
-              {/* Bacacier Section */}
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-3">Bacacier</h4>
-                <div className="space-y-4">
-                  <InputField label="Struttura (Pianta)" value={costs.bacacier.plant} onChange={(e) => handleNestedCostChange('bacacier', 'plant', e.target.value)} darkMode={darkMode} />
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <InputField label="Tetto Caldo Cieco" value={costs.bacacier.warmCieco} onChange={(e) => handleNestedCostChange('bacacier', 'warmCieco', e.target.value)} darkMode={darkMode} />
-                    <InputField label="Tetto Freddo Cieco" value={costs.bacacier.coldCieco} onChange={(e) => handleNestedCostChange('bacacier', 'coldCieco', e.target.value)} darkMode={darkMode} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <div className="flex flex-col">
-                      <InputField label="Tetto Caldo Lucernari" value={costs.bacacier.warmLucernari} onChange={(e) => handleNestedCostChange('bacacier', 'warmLucernari', e.target.value)} darkMode={darkMode} />
-                      <span className="text-[8px] opacity-40 mt-1 uppercase font-bold text-blue-500">(Suggerito: Caldo +20€)</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <InputField label="Tetto Freddo Lucernari" value={costs.bacacier.coldLucernari} onChange={(e) => handleNestedCostChange('bacacier', 'coldLucernari', e.target.value)} darkMode={darkMode} />
-                      <span className="text-[8px] opacity-40 mt-1 uppercase font-bold text-blue-500">(Suggerito: Freddo +20€)</span>
-                    </div>
-                  </div>
+            <div className="max-h-[400px] overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+              {/* Bacacier */}
+              <ConfigCard title="Bacacier">
+                <InputField label="Structure" value={costs.bacacier.plant} onChange={(e) => handleNestedCostChange('bacacier', 'plant', e.target.value)} />
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/50">
+                  <InputField label="Warm Blind" value={costs.bacacier.warmCieco} onChange={(e) => handleNestedCostChange('bacacier', 'warmCieco', e.target.value)} />
+                  <InputField label="Cold Blind" value={costs.bacacier.coldCieco} onChange={(e) => handleNestedCostChange('bacacier', 'coldCieco', e.target.value)} />
                 </div>
-              </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/50">
+                  <InputField label="Warm Skylight" value={costs.bacacier.warmLucernari} onChange={(e) => handleNestedCostChange('bacacier', 'warmLucernari', e.target.value)} />
+                  <InputField label="Cold Skylight" value={costs.bacacier.coldLucernari} onChange={(e) => handleNestedCostChange('bacacier', 'coldLucernari', e.target.value)} />
+                </div>
+              </ConfigCard>
 
-              {/* Monolitica Section */}
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-3">Monolitica</h4>
-                <div className="space-y-4">
-                  <InputField label="Struttura (Pianta)" value={costs.monolithic.plant} onChange={(e) => handleNestedCostChange('monolithic', 'plant', e.target.value)} darkMode={darkMode} />
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <InputField label="Cieco Caldo" value={costs.monolithic.warmCieco} onChange={(e) => handleNestedCostChange('monolithic', 'warmCieco', e.target.value)} darkMode={darkMode} />
-                    <InputField label="Cieco Freddo" value={costs.monolithic.coldCieco} onChange={(e) => handleNestedCostChange('monolithic', 'coldCieco', e.target.value)} darkMode={darkMode} />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <div className="flex flex-col">
-                      <InputField label="Shed Caldo" value={costs.monolithic.warmShed} onChange={(e) => handleNestedCostChange('monolithic', 'warmShed', e.target.value)} darkMode={darkMode} />
-                      <span className="text-[8px] opacity-40 mt-1 uppercase font-bold text-blue-500">(Suggerito: +10€)</span>
-                    </div>
-                    <div className="flex flex-col">
-                      <InputField label="Shed Freddo" value={costs.monolithic.coldShed} onChange={(e) => handleNestedCostChange('monolithic', 'coldShed', e.target.value)} darkMode={darkMode} />
-                      <span className="text-[8px] opacity-40 mt-1 uppercase font-bold text-blue-500">(Suggerito: +10€)</span>
-                    </div>
-                  </div>
+              {/* Monolithic */}
+              <ConfigCard title="Monolithic">
+                <InputField label="Structure" value={costs.monolithic.plant} onChange={(e) => handleNestedCostChange('monolithic', 'plant', e.target.value)} />
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/50">
+                  <InputField label="Warm Blind" value={costs.monolithic.warmCieco} onChange={(e) => handleNestedCostChange('monolithic', 'warmCieco', e.target.value)} />
+                  <InputField label="Cold Blind" value={costs.monolithic.coldCieco} onChange={(e) => handleNestedCostChange('monolithic', 'coldCieco', e.target.value)} />
                 </div>
-              </div>
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/50">
+                   <InputField label="Warm Shed" value={costs.monolithic.warmShed} onChange={(e) => handleNestedCostChange('monolithic', 'warmShed', e.target.value)} />
+                   <InputField label="Cold Shed" value={costs.monolithic.coldShed} onChange={(e) => handleNestedCostChange('monolithic', 'coldShed', e.target.value)} />
+                </div>
+              </ConfigCard>
 
-              {/* Alare Section */}
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-3">Alare</h4>
-                <div className="space-y-3">
-                  <InputField label="Struttura (Pianta)" value={costs.alare.plant} onChange={(e) => handleNestedCostChange('alare', 'plant', e.target.value)} darkMode={darkMode} />
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-slate-200 dark:border-slate-700">
-                    <InputField label="Shed Caldo" value={costs.alare.warmShed} onChange={(e) => handleNestedCostChange('alare', 'warmShed', e.target.value)} darkMode={darkMode} />
-                    <InputField label="Cieco Caldo" value={costs.alare.warmCieco} onChange={(e) => handleNestedCostChange('alare', 'warmCieco', e.target.value)} darkMode={darkMode} />
-                    <InputField label="Shed Freddo" value={costs.alare.coldShed} onChange={(e) => handleNestedCostChange('alare', 'coldShed', e.target.value)} darkMode={darkMode} />
-                    <InputField label="Cieco Freddo" value={costs.alare.coldCieco} onChange={(e) => handleNestedCostChange('alare', 'coldCieco', e.target.value)} darkMode={darkMode} />
-                  </div>
+              {/* Alare */}
+              <ConfigCard title="Alare">
+                <InputField label="Structure" value={costs.alare.plant} onChange={(e) => handleNestedCostChange('alare', 'plant', e.target.value)} />
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/50">
+                  <InputField label="Warm Shed" value={costs.alare.warmShed} onChange={(e) => handleNestedCostChange('alare', 'warmShed', e.target.value)} />
+                  <InputField label="Warm Blind" value={costs.alare.warmCieco} onChange={(e) => handleNestedCostChange('alare', 'warmCieco', e.target.value)} />
+                  <InputField label="Cold Shed" value={costs.alare.coldShed} onChange={(e) => handleNestedCostChange('alare', 'coldShed', e.target.value)} />
+                  <InputField label="Cold Blind" value={costs.alare.coldCieco} onChange={(e) => handleNestedCostChange('alare', 'coldCieco', e.target.value)} />
                 </div>
-              </div>
+              </ConfigCard>
 
-              {/* Piana Section */}
-              <div className={`p-4 rounded-xl border ${darkMode ? 'bg-slate-800/50 border-slate-700' : 'bg-slate-100/50 border-slate-200'}`}>
-                <h4 className="text-[10px] font-black uppercase tracking-widest text-blue-500 mb-3">Piana</h4>
-                <div className="grid grid-cols-1 gap-3">
-                  <InputField label="Struttura (Pianta)" value={costs.flat.plant} onChange={(e) => handleNestedCostChange('flat', 'plant', e.target.value)} darkMode={darkMode} />
-                  <div className="grid grid-cols-2 gap-3">
-                    <InputField label="Tetto Caldo" value={costs.flat.roofWarm} onChange={(e) => handleNestedCostChange('flat', 'roofWarm', e.target.value)} darkMode={darkMode} />
-                    <InputField label="Tetto Freddo" value={costs.flat.roofCold} onChange={(e) => handleNestedCostChange('flat', 'roofCold', e.target.value)} darkMode={darkMode} />
-                  </div>
+              {/* Flat */}
+              <ConfigCard title="Flat">
+                <InputField label="Structure" value={costs.flat.plant} onChange={(e) => handleNestedCostChange('flat', 'plant', e.target.value)} />
+                <div className="grid grid-cols-2 gap-2 pt-2 border-t border-gray-800/50">
+                  <InputField label="Warm Roof" value={costs.flat.roofWarm} onChange={(e) => handleNestedCostChange('flat', 'roofWarm', e.target.value)} />
+                  <InputField label="Cold Roof" value={costs.flat.roofCold} onChange={(e) => handleNestedCostChange('flat', 'roofCold', e.target.value)} />
                 </div>
-              </div>
+              </ConfigCard>
             </div>
           </section>
 
-          <section className="space-y-3 pb-4">
-            <div className="flex items-center gap-2 mb-2 font-semibold uppercase text-xs tracking-wider opacity-70">
-              <Files className="w-4 h-4" /> Esportazione Report
+          <section className="space-y-3 pt-6 border-t border-gray-800">
+            <button onClick={printPdf} className="w-full flex items-center justify-center gap-3 py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+              <Printer className="w-4 h-4" /> Print PDF
+            </button>
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={exportSelected} className="flex items-center justify-center gap-2 py-4 bg-orange-600 hover:bg-orange-700 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shadow-lg shadow-orange-900/50">
+                <FileText className="w-4 h-4" /> Report Type
+              </button>
+              <button onClick={exportAll} className="flex items-center justify-center gap-2 py-4 bg-[#0a0f1d] border border-gray-700 hover:border-gray-500 text-white rounded-xl text-[10px] font-black uppercase tracking-widest transition-all">
+                <Layers className="w-4 h-4" /> Report Full
+              </button>
             </div>
-            <button onClick={printPdf} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-rose-600/20 active:scale-95">
-              <Printer className="w-5 h-5" /> Stampa PDF (A4)
-            </button>
-            <button onClick={exportSelected} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-blue-600/20 active:scale-95">
-              <FileText className="w-5 h-5" /> Report {selectedType}
-            </button>
-            <button onClick={exportAll} className="w-full flex items-center justify-center gap-2 py-3 px-4 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-bold transition-all shadow-lg shadow-emerald-600/20 active:scale-95">
-              <Files className="w-5 h-5" /> Report Completo
-            </button>
           </section>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 p-6 lg:p-10 overflow-y-auto custom-scrollbar">
-        <header className="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6">
-          <div>
-            <h2 className="text-3xl font-extrabold mb-2 text-slate-900 dark:text-white">Prefabricated Building Cost Calculator</h2>
-            <p className="opacity-60 text-sm">Finitura: <span className="font-bold text-blue-500">{selectedFinish}</span></p>
-          </div>
-          <div className={`flex p-1 rounded-xl shadow-sm border transition-colors overflow-x-auto ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'}`}>
-            {Object.values(StructureType).map((type) => (
-              <button
-                key={type}
-                onClick={() => setSelectedType(type)}
-                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
-                  selectedType === type ? 'bg-blue-600 text-white shadow-md' : 'hover:bg-slate-100 dark:hover:bg-slate-800 opacity-70'
-                }`}
-              >
-                {type}
-              </button>
-            ))}
-          </div>
-        </header>
+      <main className="flex-1 p-6 lg:p-12 overflow-y-auto custom-scrollbar relative">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <header className="mb-12 flex flex-col md:flex-row md:items-end justify-between gap-8 border-b border-gray-800 pb-8">
+            <div>
+              <div className="flex items-center gap-2 mb-2">
+                <div className="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                <span className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em]">System Active</span>
+              </div>
+              <h2 className="text-4xl font-black text-white tracking-tighter uppercase mb-1">Cost Analysis</h2>
+              <div className="flex items-center gap-2 text-xs font-mono text-gray-400">
+                <span>PROJECT_ID: 24-BETA</span>
+                <span className="text-gray-700">|</span>
+                <span>FINISH_TYPE: <span className="text-orange-500">{selectedFinish}</span></span>
+              </div>
+            </div>
+            
+            <div className="flex p-1.5 rounded-2xl bg-[#0a0f1d] border border-gray-800">
+              {Object.values(StructureType).map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setSelectedType(type)}
+                  className={`px-6 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-wider transition-all ${
+                    selectedType === type 
+                    ? 'bg-gray-800 text-white shadow-lg border border-gray-700' 
+                    : 'text-gray-500 hover:text-gray-300'
+                  }`}
+                >
+                  {type}
+                </button>
+              ))}
+            </div>
+          </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-10">
-          {filteredResults.map((res, idx) => {
-            const key = `${res.type}_${res.thermal}_${res.subtype || 'NONE'}`;
-            const indMult = individualMultipliers[key] || 100;
-            const totalMult = Math.round((globalMultiplier / 100) * (indMult / 100) * 100);
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8 mb-12">
+            {filteredResults.map((res, idx) => {
+              const key = `${res.type}_${res.thermal}_${res.subtype || 'NONE'}`;
+              const indMult = individualMultipliers[key] || 100;
+              const totalMult = Math.round((globalMultiplier / 100) * (indMult / 100) * 100);
+              const isWarm = res.thermal === ThermalOption.WARM;
 
-            return (
-              <div key={idx} className={`rounded-2xl shadow-lg border-t-4 overflow-hidden transition-all ${darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200'} ${res.thermal === ThermalOption.WARM ? 'border-t-orange-500' : 'border-t-blue-500'}`}>
-                <div className="p-6">
-                  <div className="flex justify-between items-start mb-4 gap-4">
-                    <div>
-                      <h3 className="text-xl font-bold flex items-center gap-2">
-                        {res.thermal === ThermalOption.WARM ? <ThermometerSun className="w-5 h-5 text-orange-500" /> : <ThermometerSnowflake className="w-5 h-5 text-blue-500" />}
-                        {res.type} {res.subtype ? `- ${res.subtype}` : ''}
-                      </h3>
-                      <div className="text-[10px] font-bold opacity-40 uppercase tracking-widest mt-1">Opzione {res.thermal}</div>
-                    </div>
-                    <div className="text-right">
-                      <div className="text-2xl md:text-3xl font-black text-slate-900 dark:text-white">€{Math.round(res.totalCost).toLocaleString('it-IT')}</div>
-                      <div className="text-sm font-bold text-blue-600 dark:text-blue-400">
-                        €{(res.totalCost / res.plantArea).toFixed(2)}/m²
+              return (
+                <div key={idx} className="group relative bg-gray-800/30 backdrop-blur-md rounded-3xl border border-white/5 overflow-hidden hover:border-white/10 transition-all duration-300 shadow-2xl">
+                  {/* Status Indicator Line */}
+                  <div className={`absolute top-0 left-0 w-full h-1 ${isWarm ? 'bg-orange-500' : 'bg-sky-500'}`} />
+                  
+                  <div className="p-8">
+                    {/* Card Header */}
+                    <div className="flex justify-between items-start mb-8">
+                      <div>
+                        <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-lg border mb-3 ${isWarm ? 'bg-orange-500/10 border-orange-500/20 text-orange-500' : 'bg-sky-500/10 border-sky-500/20 text-sky-500'}`}>
+                          <span className="text-[9px] font-black uppercase tracking-widest">{res.thermal} OPTION</span>
+                        </div>
+                        <h3 className="text-2xl font-black text-white uppercase tracking-tight flex items-center gap-3">
+                          {res.type} 
+                          {res.subtype && <span className="text-gray-600 font-bold text-lg">// {res.subtype}</span>}
+                        </h3>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-4xl font-black text-white font-mono tracking-tighter mb-1">
+                          €{Math.round(res.totalCost).toLocaleString('it-IT')}
+                        </div>
+                        <div className="text-xs font-bold font-mono text-gray-500">
+                          €{(res.totalCost / res.plantArea).toFixed(2)} / m²
+                        </div>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Multiplier Slider */}
-                  <div className={`mb-6 p-4 rounded-xl border-2 transition-all ${indMult === 100 ? (darkMode ? 'bg-slate-800/50 border-slate-700/50' : 'bg-slate-50 border-slate-100') : (indMult > 100 ? 'bg-rose-500/5 border-rose-500/20' : 'bg-emerald-500/5 border-emerald-500/20')}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-2 font-bold text-[10px] uppercase tracking-widest opacity-60">
-                        {indMult > 100 ? <TrendingUp className="w-3 h-3 text-rose-500" /> : indMult < 100 ? <TrendingDown className="w-3 h-3 text-emerald-500" /> : <Percent className="w-3 h-3" />}
-                        Variazione Locale Tipologia
+                    {/* Multiplier Control */}
+                    <div className="mb-8 bg-[#0a0f1d] rounded-2xl p-5 border border-gray-800/50">
+                      <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2 text-[9px] font-black uppercase tracking-[0.2em] text-gray-500">
+                          <TrendingUp className="w-3 h-3" /> Local Variance
+                        </div>
+                        <div className="font-mono text-xs">
+                           <span className="text-gray-500 mr-2">{indMult}% LOCAL</span>
+                           <span className={`${totalMult > 100 ? 'text-orange-500' : 'text-gray-300'} font-bold`}>
+                            {totalMult}% NET
+                           </span>
+                        </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                         <span className={`text-xs font-bold opacity-40`}>Locale: {indMult}%</span>
-                         <span className={`text-sm font-black ${totalMult > 100 ? 'text-rose-500' : totalMult < 100 ? 'text-emerald-500' : ''}`}>
-                          Tot: {totalMult}%
-                         </span>
+                      <input 
+                        type="range" 
+                        min="50" 
+                        max="200" 
+                        value={indMult} 
+                        onChange={(e) => updateIndividualMultiplier(res.type, res.thermal, res.subtype, parseInt(e.target.value))}
+                        className="w-full h-1 bg-gray-800 rounded-full appearance-none cursor-pointer accent-white hover:accent-orange-500 transition-all"
+                      />
+                    </div>
+
+                    {/* Data Table */}
+                    <div className="space-y-1">
+                      <div className="grid grid-cols-3 text-[9px] font-black text-gray-600 uppercase tracking-widest mb-3 px-2">
+                        <span>Component</span>
+                        <span className="text-right">Rate</span>
+                        <span className="text-right">Total</span>
                       </div>
+                      <DetailRow label="Structure" unit={res.unitCosts.plant.toFixed(2)} total={res.breakdown.plant} />
+                      <DetailRow 
+                        label="Foundations" 
+                        unit={res.unitCosts.foundations.toFixed(2)} 
+                        total={res.breakdown.foundations} 
+                        disabled={res.breakdown.foundations === 0}
+                      />
+                      <DetailRow 
+                        label="Flooring" 
+                        unit={res.unitCosts.flooring.toFixed(2)} 
+                        total={res.breakdown.flooring} 
+                        disabled={res.breakdown.flooring === 0}
+                      />
+                      <DetailRow label="Mezzanines" unit={res.unitCosts.mezzanine.toFixed(2)} total={res.breakdown.mezzanine} />
+                      <DetailRow label="Roofing" unit={res.unitCosts.roof.toFixed(2)} total={res.breakdown.roof} />
+                      <DetailRow label="Panels (Base)" unit={res.unitCosts.panelBase.toFixed(2)} total={res.breakdown.panelBase} />
+                      <DetailRow label="Panels (Finish)" unit={res.unitCosts.panelExtra.toFixed(2)} total={res.breakdown.panelExtra} highlight />
                     </div>
-                    <input 
-                      type="range" 
-                      min="50" 
-                      max="200" 
-                      value={indMult} 
-                      onChange={(e) => updateIndividualMultiplier(res.type, res.thermal, res.subtype, parseInt(e.target.value))}
-                      className="w-full h-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                    />
-                    <p className="text-[9px] mt-1 opacity-40 uppercase font-bold">*Variazione tipologia + Variazione Globale ({globalMultiplier}%)</p>
-                  </div>
 
-                  <div className="space-y-1">
-                    <div className="grid grid-cols-3 text-[10px] font-bold opacity-30 uppercase tracking-tighter mb-2 pb-1 border-b">
-                      <span>Componente</span>
-                      <span className="text-right">Unitario</span>
-                      <span className="text-right">Parziale</span>
+                    {/* Footer Legend */}
+                    <div className="mt-8 pt-6 border-t border-gray-800 flex flex-wrap gap-4">
+                      <LegendItem label="Structure" value={res.breakdown.plant + res.breakdown.foundations + res.breakdown.flooring} />
+                      <LegendItem label="Finishes" value={res.breakdown.roof + res.breakdown.panelBase + res.breakdown.panelExtra} />
+                      <LegendItem label="Mezzanines" value={res.breakdown.mezzanine} />
                     </div>
-                    <DetailParziale label="Struttura Prefab" unit={res.unitCosts.plant.toFixed(2)} total={res.breakdown.plant} darkMode={darkMode} />
-                    <DetailParziale 
-                      label={`Fondazioni ${res.breakdown.foundations === 0 ? '(Escl.)' : ''}`} 
-                      unit={res.unitCosts.foundations.toFixed(2)} 
-                      total={res.breakdown.foundations} 
-                      darkMode={darkMode} 
-                      disabled={res.breakdown.foundations === 0}
-                    />
-                    <DetailParziale 
-                      label={`Pavimentazione ${res.breakdown.flooring === 0 ? '(Escl.)' : ''}`} 
-                      unit={res.unitCosts.flooring.toFixed(2)} 
-                      total={res.breakdown.flooring} 
-                      darkMode={darkMode} 
-                      disabled={res.breakdown.flooring === 0}
-                    />
-                    <DetailParziale label="Soppalchi" unit={res.unitCosts.mezzanine.toFixed(2)} total={res.breakdown.mezzanine} darkMode={darkMode} />
-                    <DetailParziale label={`Copertura ${res.subtype ? '('+res.subtype+')' : ''}`} unit={res.unitCosts.roof.toFixed(2)} total={res.breakdown.roof} darkMode={darkMode} />
-                    <DetailParziale label="Pannelli Base" unit={res.unitCosts.panelBase.toFixed(2)} total={res.breakdown.panelBase} darkMode={darkMode} />
-                    <DetailParziale label={`Extra Pannelli`} unit={res.unitCosts.panelExtra.toFixed(2)} total={res.breakdown.panelExtra} darkMode={darkMode} highlight />
-                  </div>
-
-                  <div className="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800 grid grid-cols-2 gap-x-4 gap-y-2 text-xs">
-                    <LegendItem color="bg-blue-500" label="Sottostruttura" value={res.breakdown.plant + res.breakdown.foundations + res.breakdown.flooring} darkMode={darkMode} />
-                    <LegendItem color="bg-emerald-500" label="Soppalchi" value={res.breakdown.mezzanine} darkMode={darkMode} />
-                    <LegendItem color="bg-amber-500" label="Copertura" value={res.breakdown.roof} darkMode={darkMode} />
-                    <LegendItem color="bg-rose-500" label="Pannelli" value={res.breakdown.panelBase + res.breakdown.panelExtra} darkMode={darkMode} />
                   </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <div className={`mt-10 p-5 rounded-xl border flex items-start gap-4 transition-colors ${darkMode ? 'bg-blue-900/10 border-blue-900/30 text-blue-200' : 'bg-blue-50 border-blue-100 text-blue-800'}`}>
-          <Info className="w-6 h-6 shrink-0 opacity-70 mt-1" />
-          <div className="text-sm leading-relaxed">
-            <strong className="block mb-2 text-base">Note:</strong>
-            <ul className="list-disc ml-5 space-y-1">
-              <li><strong>Barra Master Globale:</strong> Utilizza lo slider in alto nella sidebar per regolare i prezzi di tutti i modelli contemporaneamente.</li>
-              <li><strong>Opere Complementari:</strong> Usa il flag "Considera nel totale" per includere o escludere fondazioni e pavimento dal calcolo finale.</li>
-              <li><strong>Bacacier & Monolitica:</strong> Sono presenti varianti separate per configurazioni Cieche e Shed/Lucernari.</li>
-              <li><strong>Stampa PDF:</strong> Il report è ottimizzato per la stampa in formato A4 con grafica professionale.</li>
-            </ul>
+              );
+            })}
           </div>
-        </div>
 
-        {/* Professional Footer */}
-        <footer className={`mt-20 p-10 md:p-16 rounded-3xl text-center space-y-10 transition-colors ${darkMode ? 'bg-[#030712] border border-slate-800' : 'bg-slate-900 text-white'}`}>
-          <div className="flex flex-col items-center gap-4">
-            <div className={`p-4 rounded-2xl ${darkMode ? 'bg-slate-900/50' : 'bg-white/10'}`}>
-              <ShieldCheck className="w-8 h-8 text-blue-500" />
+          <footer className="mt-20 border-t border-gray-800 py-12 flex flex-col md:flex-row items-center justify-between gap-6 opacity-60 hover:opacity-100 transition-opacity">
+            <div className="text-left">
+               <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white mb-2">Designed by Efrem Giannessi</h4>
+               <p className="text-[9px] text-gray-500 uppercase tracking-wider">Engineering Solutions for Precast Structures</p>
             </div>
-            <h4 className="text-[10px] font-bold uppercase tracking-[0.2em] opacity-50">PROPRIETÀ INTELLETTUALE & SVILUPPO</h4>
-          </div>
-
-          <div className="space-y-3">
-            <h3 className="text-2xl md:text-3xl font-black">
-              Software progettato e sviluppato da <span className="text-blue-500">Efrem Giannessi</span>
-            </h3>
-            <p className="text-sm md:text-base opacity-40 font-medium italic">
-              Specialized Engineering Solutions for Precast Concrete Structures
-            </p>
-          </div>
-
-          <div className="flex flex-col md:flex-row items-center justify-center gap-6 text-[10px] font-bold tracking-widest opacity-60">
-            <div className="flex items-center gap-2">
-              <span className="text-lg">©</span> 2024-2025 ALL RIGHTS RESERVED
+            <div className="flex items-center gap-6 text-[9px] font-black uppercase tracking-widest text-gray-500">
+               <span>v1.0.4 BUILD 2490</span>
+               <span className="w-1 h-1 bg-gray-700 rounded-full"></span>
+               <span>REACT SYSTEM</span>
+               <span className="w-1 h-1 bg-gray-700 rounded-full"></span>
+               <span>SECURE</span>
             </div>
-            <div className="hidden md:block w-1.5 h-1.5 rounded-full bg-blue-500" />
-            <a href="https://efremgiannessi.org" target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 hover:text-blue-500 transition-colors uppercase">
-              <Globe className="w-3.5 h-3.5" /> EFREMGIANNESSI.ORG
-            </a>
-          </div>
-
-          <div className={`p-6 rounded-2xl border ${darkMode ? 'bg-slate-900/30 border-slate-800/50' : 'bg-white/5 border-white/10'}`}>
-            <p className="text-[9px] md:text-[10px] leading-relaxed uppercase tracking-wider font-semibold opacity-40 max-w-3xl mx-auto">
-              AVVISO LEGALE: QUESTO SOFTWARE E GLI ALGORITMI DI CALCOLO CONTENUTI SONO DI PROPRIETÀ ESCLUSIVA DI EFREM GIANNESSI. 
-              QUALSIASI RIPRODUZIONE, DISTRIBUZIONE O UTILIZZO NON AUTORIZZATO DEL CODICE SORGENTE O DELLE LOGICHE TECNICHE È SEVERAMENTE VIETATO.
-            </p>
-          </div>
-        </footer>
+          </footer>
+        </div>
       </main>
     </div>
   );
 };
 
-// --- Helper Components ---
-const InputField: React.FC<{ label: string; name?: string; value: number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; className?: string; darkMode: boolean; }> = ({ label, name, value, onChange, className = "", darkMode }) => (
+// --- Styled Components ---
+
+const InputField: React.FC<{ label: string; name?: string; value: number; onChange: (e: React.ChangeEvent<HTMLInputElement>) => void; className?: string; }> = ({ label, name, value, onChange, className = "" }) => (
   <div className={className}>
-    <label className={`block text-[9px] font-bold mb-1 uppercase tracking-wider opacity-60`}>{label}</label>
-    <input type="number" name={name} value={value} onChange={onChange} className={`w-full border rounded-lg px-3 py-2 text-xs font-semibold focus:outline-none focus:ring-4 focus:ring-blue-500/10 transition-all ${darkMode ? 'bg-slate-800 border-slate-700 text-white' : 'bg-slate-50 border-slate-200 text-slate-900'}`} />
+    <label className="block text-[9px] font-black mb-1.5 uppercase tracking-widest text-gray-500">{label}</label>
+    <div className="relative group">
+      <input 
+        type="number" 
+        name={name} 
+        value={value} 
+        onChange={onChange} 
+        className="w-full bg-[#111827] border border-gray-700 rounded-lg px-3 py-2.5 text-xs font-mono font-bold text-white focus:outline-none focus:border-orange-600 focus:ring-1 focus:ring-orange-600/50 transition-all placeholder-gray-700"
+      />
+      <div className="absolute right-2 top-2.5 text-[9px] font-black text-gray-700 pointer-events-none group-focus-within:text-orange-600 transition-colors">
+        INPUT
+      </div>
+    </div>
   </div>
 );
 
-const DetailParziale: React.FC<{ label: string; unit: string; total: number; darkMode: boolean; highlight?: boolean; disabled?: boolean }> = ({ label, unit, total, darkMode, highlight, disabled }) => (
-  <div className={`grid grid-cols-3 py-1.5 border-b border-dashed last:border-0 ${darkMode ? 'border-slate-800' : 'border-slate-100'} ${highlight ? 'text-blue-500 font-bold' : (disabled ? 'opacity-30 italic' : 'opacity-80')}`}>
-    <span className="text-xs truncate pr-1">{label}</span>
-    <span className="text-right text-[10px] font-mono opacity-50 tabular-nums">{unit}</span>
-    <span className="text-right text-xs font-bold tabular-nums">€{Math.round(total).toLocaleString()}</span>
+const ConfigCard: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
+  <div className="p-4 rounded-xl border border-gray-800 bg-[#0c1120] hover:border-gray-700 transition-colors">
+    <h4 className="text-[10px] font-black uppercase tracking-widest text-white mb-4 flex items-center gap-2">
+      <div className="w-1 h-1 bg-orange-600 rounded-full"></div>
+      {title}
+    </h4>
+    <div className="space-y-3">
+      {children}
+    </div>
   </div>
 );
 
-const LegendItem: React.FC<{ color: string; label: string; value: number; darkMode: boolean }> = ({ color, label, value, darkMode }) => (
-  <div className="flex items-center gap-2 py-1">
-    <div className={`w-2 h-2 rounded-full flex-shrink-0 ${color}`} />
-    <span className="opacity-50 flex-1 truncate text-[11px]">{label}</span>
-    <span className={`font-semibold text-[11px] ${darkMode ? 'text-slate-200' : 'text-slate-800'}`}>€{Math.round(value).toLocaleString()}</span>
+const DetailRow: React.FC<{ label: string; unit: string; total: number; highlight?: boolean; disabled?: boolean }> = ({ label, unit, total, highlight, disabled }) => (
+  <div className={`grid grid-cols-3 py-2 border-b border-gray-800/50 last:border-0 items-center px-2 rounded hover:bg-white/5 transition-colors ${disabled ? 'opacity-30' : ''}`}>
+    <span className={`text-[10px] font-bold uppercase tracking-wider truncate ${highlight ? 'text-orange-500' : 'text-gray-400'}`}>{label}</span>
+    <span className="text-right text-[10px] font-mono text-gray-600">{unit}</span>
+    <span className={`text-right text-[11px] font-mono font-bold ${highlight ? 'text-orange-500' : 'text-white'}`}>€{Math.round(total).toLocaleString()}</span>
+  </div>
+);
+
+const LegendItem: React.FC<{ label: string; value: number }> = ({ label, value }) => (
+  <div className="flex flex-col">
+    <span className="text-[9px] font-black uppercase tracking-widest text-gray-600 mb-0.5">{label}</span>
+    <span className="text-xs font-mono font-bold text-gray-300">€{Math.round(value).toLocaleString()}</span>
   </div>
 );
 
