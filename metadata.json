@@ -1,5 +1,6 @@
 {
   "name": "Calcolatore Costi Edifici Prefabbricati",
   "description": "Uno strumento avanzato per il calcolo dei costi e delle dimensioni di edifici industriali prefabbricati, con supporto per diverse tipologie strutturali (Bacacier, Alare, Monolitica, Piana) e opzioni termiche e costi unitari personalizzabili.",
-  "requestFramePermissions": []
+  "requestFramePermissions": [],
+  "majorCapabilities": []
 }
